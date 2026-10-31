@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "ТЭЙЛ",
+    "slug": "teyl-junior",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "teyl",
+    "icon": "./assets/icon.png",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "app.teyl.junior" },
+    "android": { "package": "app.teyl.junior", "adaptiveIcon": { "foregroundImage": "./assets/icon.png", "backgroundColor": "#2665FF" } },
+    "web": { "favicon": "./assets/icon.png", "bundler": "metro", "name": "ТЭЙЛ — ближе к своей цели" },
+    "plugins": ["expo-font", "expo-secure-store"]
+  }
+}

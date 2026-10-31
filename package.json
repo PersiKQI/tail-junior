@@ -1,0 +1,47 @@
+{
+  "name": "teyl-junior",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "engines": {
+    "node": "^24.3.0 || >=26.0.0"
+  },
+  "scripts": {
+    "start": "expo start",
+    "web": "expo start --web --port 8081",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "api": "node --env-file-if-exists=.env server/index.ts",
+    "dev": "node --env-file-if-exists=.env scripts/dev.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "build:web": "expo export --platform web",
+    "build:native": "expo export --platform ios --platform android --output-dir dist-native"
+  },
+  "dependencies": {
+    "@expo-google-fonts/manrope": "^0.4.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~58.0.22",
+    "expo-blur": "~58.0.5",
+    "expo-constants": "~58.0.14",
+    "expo-font": "~58.0.11",
+    "expo-glass-effect": "~58.0.5",
+    "expo-haptics": "~58.0.7",
+    "expo-linear-gradient": "~58.0.3",
+    "expo-secure-store": "~58.0.2",
+    "expo-status-bar": "~58.0.4",
+    "lucide-react-native": "^1.66.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-svg": "15.16.0",
+    "react-native-web": "^0.21.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "~19.3.0",
+    "typescript": "~6.0.3"
+  },
+  "type": "module"
+}
