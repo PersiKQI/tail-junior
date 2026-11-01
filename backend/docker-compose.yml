@@ -1,0 +1,22 @@
+name: teyljunior
+
+services:
+  # PostgreSQL для API и интеграционных тестов. Порт 55433 и только loopback: не пересекается
+  # с базой tail-mid (55432) и не публикуется наружу.
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  pgdata:

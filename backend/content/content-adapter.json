@@ -1,0 +1,90 @@
+{
+  "adapterVersion": "teyl-adapter-2026-11-01-1",
+  "programVersion": "teyl-learning-2026-11-01-draft-1",
+  "provenance": "Восстановлен по спецификации v0.1 (разделы 6, 12, 14). Пары перечислены явно: декартово произведение допустимых наборов не берётся автоматически.",
+  "items": {
+    "L01": { "allowedPairs": [["fit", "deadline"]] },
+    "L02": { "allowedPairs": [["keep", "access"]] },
+    "L03": { "allowedPairs": [["terms", "early"]] },
+    "L04": { "allowedPairs": [["short", "compare"]] },
+    "L05": { "allowedPairs": [["rest", "protect"]] },
+    "L06": { "allowedPairs": [["review", "changed"]] },
+    "L07": { "allowedPairs": [["yes", "market"]] },
+    "L08": { "allowedPairs": [["risk", "pay"]] },
+    "L09": { "allowedPairs": [["minus24", "all"]] },
+    "L10": { "allowedPairs": [["zero", "net"]] },
+    "L11": { "allowedPairs": [["market", "before"]] },
+    "L12": { "allowedPairs": [["check", "product"]] },
+    "L13": { "allowedPairs": [["no", "decision"]] },
+    "L14": { "allowedPairs": [["normal", "market"]] },
+    "L15": { "allowedPairs": [["weak", "sector"]] },
+    "L16": { "allowedPairs": [["concentrated", "share"]] },
+    "L17": { "allowedPairs": [["unknown", "history"]] },
+    "L18": { "allowedPairs": [["cash", "volatility"]] },
+    "L19": { "allowedPairs": [["stop", "signs"]] },
+    "L20": { "allowedPairs": [["own", "interest"]] },
+    "L21": { "allowedPairs": [["verify", "independent"]] },
+    "L22": { "allowedPairs": [["little", "selective"]] },
+    "L23": { "allowedPairs": [["hang", "pressure"]] },
+    "L24": { "allowedPairs": [["limits", "assumptions"], ["buffer", "assumptions"]], "note": "Два действия совместимы с общим объяснением (спецификация §6)." },
+    "D01": { "allowedPairs": [["available", "date"]] },
+    "D02": { "allowedPairs": [["plus9", "net"]] },
+    "D03": { "allowedPairs": [["check", "independent"]] },
+    "R02A": { "allowedPairs": [["keep", "date"]] },
+    "R02B": { "allowedPairs": [["minus18", "all"]] },
+    "R07A": { "allowedPairs": [["weak", "sector"]] },
+    "R07B": { "allowedPairs": [["registry", "independent"]] },
+    "R30A": { "allowedPairs": [["limit", "protect"]] },
+    "R30B": { "allowedPairs": [["limits", "assumptions"]] }
+  },
+  "outcomes": [
+    {
+      "id": "deadline_access",
+      "title": "Учесть доступность денег к сроку",
+      "diagnosticItemIds": ["D01"],
+      "reviewItemIds": ["R02A"],
+      "practiceMarkItemIds": ["L01", "L18"],
+      "badgeId": "money_by_deadline"
+    },
+    {
+      "id": "net_result",
+      "title": "Учесть расходы в результате",
+      "diagnosticItemIds": ["D02"],
+      "reviewItemIds": ["R02B"],
+      "practiceMarkItemIds": ["L09", "L10"],
+      "badgeId": "whole_result"
+    },
+    {
+      "id": "sector_concentration",
+      "title": "Заметить отраслевую концентрацию",
+      "diagnosticItemIds": [],
+      "reviewItemIds": ["R07A"],
+      "practiceMarkItemIds": ["L15", "L16"],
+      "badgeId": "look_inside"
+    },
+    {
+      "id": "independent_verification",
+      "title": "Проверить источник независимо",
+      "diagnosticItemIds": ["D03"],
+      "reviewItemIds": ["R07B"],
+      "practiceMarkItemIds": ["L21", "L22"],
+      "badgeId": "check_source"
+    },
+    {
+      "id": "required_payment",
+      "title": "Сохранить сумму на обязательную оплату",
+      "diagnosticItemIds": [],
+      "reviewItemIds": ["R30A"],
+      "practiceMarkItemIds": [],
+      "badgeId": null
+    },
+    {
+      "id": "plan_limits",
+      "title": "Назвать ограничения плана",
+      "diagnosticItemIds": [],
+      "reviewItemIds": ["R30B"],
+      "practiceMarkItemIds": [],
+      "badgeId": null
+    }
+  ]
+}

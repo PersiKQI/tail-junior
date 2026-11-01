@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "provenance": "Восстановлено по §22 спецификации v0.1. Экспорт идёт только при profile.analyticsEnabled = true; операционные факты для прогресса записываются всегда.",
+  "common": {
+    "required": ["eventId", "eventName", "schemaVersion", "origin", "occurredAt", "subject", "sourceType", "sourceId", "programVersion", "contentFamilyId", "cohortId", "properties"],
+    "subject": "HMAC-SHA256(TEYL_ANALYTICS_KEY, userId), первые 32 hex-символа: псевдонимная связь, а не userId",
+    "eventId": "серверный факт — id domain_facts; клиентское наблюдение — client:<subject>:<clientEventId>. Получатель дедуплицирует по eventId: exactly once не гарантируется",
+    "forbidden": ["amount", "goalTitle", "note", "freeText", "allocation", "token", "любые суммы личного бюджета"]
+  },
+  "serverFacts": [
+    { "name": "answer_accepted", "properties": ["role", "familyId", "programVersion"] },
+    { "name": "assessment_finalized", "properties": ["kind", "status"] },
+    { "name": "lab_decision_committed", "properties": [] },
+    { "name": "lab_reflection_accepted", "properties": [] },
+    { "name": "lab_case_completed", "properties": ["caseFamilyId"] },
+    { "name": "xp_granted", "properties": ["basisKey", "xp"] },
+    { "name": "badge_granted", "properties": ["badgeId"] },
+    { "name": "study_day_credited", "properties": [] },
+    { "name": "challenge_completed", "properties": ["familyId"] },
+    { "name": "notification_provider_accepted", "properties": ["triggerType"] }
+  ],
+  "clientEvents": {
+    "maxPerBatch": 20,
+    "fields": ["clientEventId", "name", "clientOccurredAt", "targetId"],
+    "names": ["app_opened", "assignment_opened", "explanation_opened", "lab_result_viewed", "challenge_viewed", "notification_opened"],
+    "note": "Наблюдения не начисляют награды. notification_opened с targetId = notificationId отмечает открытие уведомления даже без согласия на аналитику: это операционный факт частоты приглашений."
+  },
+  "metrics": {
+    "labInterest": "доля пользователей с исходным решением среди получивших условия кейса",
+    "labCompletion": "полный кейс среди начавших",
+    "activation": "первое learning с действием и объяснением либо исходное лабораторное решение; состав когорты указывается явно",
+    "returnD7": "поведенческий возврат за заранее выбранное окно от активации; не равен RS07",
+    "learningResult": "корректные первые допустимые review ответы с объяснением среди отвеченных; отдельно охват назначенных и пропуски; фактическая задержка",
+    "notifications": "provider accepted, opened и meaningful return (учебное действие в течение 24 часов после открытия); атрибуция, а не доказательство эффекта"
+  }
+}

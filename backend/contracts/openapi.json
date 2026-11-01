@@ -1,0 +1,1028 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "ТЭЙЛ API v2",
+    "version": "0.5.0-stage5",
+    "description": "Этапы 1–5 спецификации backend v0.1: анонимная личность, назначения и попытки, диагностические и отложенные наборы со скрытием оценки до финализации, следующий шаг, учебная лаборатория V2, прогресс (XP, роли, бейджи, свидетельства, серия), денежный план и журналы, игровое событие, косметика персонажа, перенесённый старый D7, напоминания и установка, клиентская телеметрия. Восстановлено по тексту спецификации; исходный openapi.json комплекта не передан. Денежные поля — int64 в копейках с суффиксом Minor. Любой авторизованный маршрут и POST /sessions могут ответить 429 RATE_LIMITED с заголовком Retry-After."
+  },
+  "servers": [{ "url": "/api/v2" }],
+  "security": [{ "bearer": [] }],
+  "paths": {
+    "/health": {
+      "get": {
+        "security": [],
+        "summary": "Проверка работоспособности HTTP сервиса",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "const": "ok" } } } } } } }
+      }
+    },
+    "/sessions": {
+      "post": {
+        "security": [],
+        "summary": "Создать анонимный профиль",
+        "description": "Idempotency-Key не используется: ответ с открытым токеном не хранится в журнале повторов. Токен возвращается один раз. Пустое тело допустимо.",
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SessionRequest" } } } },
+        "responses": {
+          "201": { "description": "создан", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Session" } } } },
+          "503": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/bootstrap": {
+      "get": {
+        "summary": "Краткое состояние без закрытых оценок",
+        "responses": {
+          "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Bootstrap" } } } },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/profile": {
+      "patch": {
+        "summary": "Изменить профиль с проверкой revision",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfilePatch" } } } },
+        "responses": {
+          "200": { "description": "сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/account": {
+      "delete": {
+        "summary": "Удалить профиль и отозвать token",
+        "description": "Idempotency-Key не требуется. Повтор после 204 получает 401.",
+        "responses": { "204": { "description": "удалено" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/learning/assignments": {
+      "get": {
+        "summary": "Назначения без текстов будущих проверок",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Assignment" } } } } } }
+          }
+        }
+      }
+    },
+    "/learning/practice-assignments": {
+      "post": {
+        "summary": "Назначить ручную практику",
+        "description": "Доступно после первого принятого ответа по семейству. Открытая практика возвращается повторно (200).",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["familyId"], "properties": { "familyId": { "type": "string" } } } } } },
+        "responses": {
+          "201": { "description": "создана", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Assignment" } } } },
+          "200": { "description": "уже открыта", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Assignment" } } } },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/learning/attempts": {
+      "post": {
+        "summary": "Начать или продолжить назначенную попытку",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["assignmentId"], "properties": { "assignmentId": { "type": "string" } } } } } },
+        "responses": {
+          "201": { "description": "начата", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Attempt" } } } },
+          "200": { "description": "продолжена", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Attempt" } } } },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/learning/attempts/{attemptId}": {
+      "parameters": [{ "$ref": "#/components/parameters/AttemptId" }],
+      "get": {
+        "summary": "Получить попытку с допустимой публичной проекцией",
+        "responses": {
+          "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Attempt" } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/learning/attempts/{attemptId}/support": {
+      "parameters": [{ "$ref": "#/components/parameters/AttemptId" }],
+      "post": {
+        "summary": "Запросить подсказку или термин",
+        "description": "Выдача помощи фиксируется до ответа и снимает самостоятельность попытки.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "enum": ["hint", "term"] }, "termId": { "type": "string" } } } } } },
+        "responses": {
+          "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Support" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/assessment-sets": {
+      "get": {
+        "summary": "Состояния и финализированные результаты наборов",
+        "description": "До готовности набора — только название, статус, сроки и недостающие якоря. До finalizedAt нет правильности, разбора и correct.",
+        "responses": {
+          "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AssessmentSet" } } } } } } }
+        }
+      }
+    },
+    "/assessment-sets/diagnostic": {
+      "post": {
+        "summary": "Начать добровольную диагностику",
+        "description": "Первичный набор один: повторный запрос с другим ключом возвращает существующий (200), даже после partial или skipped. Тело — {}.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false } } } },
+        "responses": {
+          "201": { "description": "создан", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssessmentSet" } } } },
+          "200": { "description": "уже есть", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssessmentSet" } } } }
+        }
+      }
+    },
+    "/assessment-sets/{setId}/finalization": {
+      "parameters": [{ "name": "setId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "summary": "Закончить набор: partial с частью ответов, skipped без ответов",
+        "description": "Последний необходимый ответ финализирует completed автоматически. Первая финализация неизменна: повтор возвращает её. Начатые неотвеченные попытки получают abandoned. Тело — {}.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false } } } },
+        "responses": {
+          "200": { "description": "финализирован", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssessmentSet" } } } },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/next-step": {
+      "get": {
+        "summary": "Один рекомендуемый следующий шаг",
+        "description": "Порядок: продолжить попытку, готовая отложенная пара, следующее задание маршрута, другая открытая тема. Не зависит от скрытой правильности.",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "kind": { "enum": ["continue_attempt", "review_set", "learning", "lab_experiment", "repeat", "none"] },
+                    "reason": { "type": "string" },
+                    "attemptId": { "type": ["string", "null"] },
+                    "assignmentId": { "type": ["string", "null"], "description": "Для repeat — назначенный сервером повтор (streakEligible, без XP)." },
+                    "setId": { "type": ["string", "null"] },
+                    "experimentId": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress": {
+      "get": {
+        "summary": "XP, участие, активность и конкретные результаты отдельно",
+        "description": "Перед чтением серии обрабатываются завершённые учебные дни. Свидетельства и correct появляются только после финализации наборов.",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Progress" } } } } }
+      }
+    },
+    "/lab/cases": {
+      "get": {
+        "summary": "Доступные условия лабораторных кейсов",
+        "description": "Без ставок сценариев, проверочных пар и статусов причин: числовые исходы появляются только после фиксации решения.",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/LabCase" } } } } } } } }
+      }
+    },
+    "/lab/experiments": {
+      "get": {
+        "summary": "История экспериментов с закреплёнными условиями",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/LabExperiment" } } } } } } } }
+      },
+      "post": {
+        "summary": "Создать эксперимент с закреплённой редакцией",
+        "description": "Незавершённый эксперимент того же кейса возвращается повторно (200).",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["caseFamilyId"], "properties": { "caseFamilyId": { "type": "string" } } } } } },
+        "responses": {
+          "201": { "description": "создан", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabExperiment" } } } },
+          "200": { "description": "открытый уже есть", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabExperiment" } } } }
+        }
+      }
+    },
+    "/lab/experiments/{experimentId}": {
+      "parameters": [{ "$ref": "#/components/parameters/ExperimentId" }],
+      "get": {
+        "summary": "Состояние и история эксперимента",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabExperiment" } } } }, "404": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/lab/experiments/{experimentId}/decisions": {
+      "parameters": [{ "$ref": "#/components/parameters/ExperimentId" }],
+      "post": {
+        "summary": "Сохранить неизменяемое решение до исходов",
+        "description": "Первое решение — original, следующие — alternative со ссылкой на него. Нарушение резерва — constraintStatus=reserve_violated, а не ошибка.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object", "additionalProperties": false, "required": ["allocation", "reasonId"],
+                "properties": { "allocation": { "$ref": "#/components/schemas/Allocation" }, "reasonId": { "type": "string" }, "note": { "type": ["string", "null"], "maxLength": 500 } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabDecision" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/lab/decisions/{decisionId}": {
+      "parameters": [{ "name": "decisionId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": {
+        "summary": "Получить сохранённое решение",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabDecision" } } } }, "404": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/lab/experiments/{experimentId}/runs": {
+      "parameters": [{ "$ref": "#/components/parameters/ExperimentId" }],
+      "post": {
+        "summary": "Вычислить сценарий закреплённого решения",
+        "description": "Один run на решение и сценарий: повтор возвращает его (200), сохранённый результат не пересчитывается.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["decisionId", "scenarioId"], "properties": { "decisionId": { "type": "string" }, "scenarioId": { "enum": ["growth", "down", "early"] } } } } } },
+        "responses": {
+          "201": { "description": "рассчитан", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabRun" } } } },
+          "200": { "description": "уже есть", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabRun" } } } },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/lab/runs/{runId}": {
+      "parameters": [{ "$ref": "#/components/parameters/RunId" }],
+      "get": {
+        "summary": "Получить расчёт и вопрос без ключа",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabRun" } } } }, "404": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/lab/runs/{runId}/reflection": {
+      "parameters": [{ "$ref": "#/components/parameters/RunId" }],
+      "post": {
+        "summary": "Сохранить структурированный вывод",
+        "description": "Первый вывод неизменен: тот же ответ — 200, другой — 409 REFLECTION_EXISTS.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["choiceId", "reasonId"], "properties": { "choiceId": { "type": "string" }, "reasonId": { "type": "string" } } } } } },
+        "responses": {
+          "201": { "description": "принят", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabRun" } } } },
+          "200": { "description": "уже принят", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabRun" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/lab/experiments/{experimentId}/comparison": {
+      "parameters": [{ "$ref": "#/components/parameters/ExperimentId" }],
+      "get": {
+        "summary": "Прочитать сохранённое итоговое сравнение",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabComparison" } } } }, "404": { "$ref": "#/components/responses/Error" } }
+      },
+      "post": {
+        "summary": "Сохранить обоснование сохранения или пересмотра",
+        "description": "Нужны исходное решение, все его расчёты и выводы по ним; при revise — альтернатива того же эксперимента со всеми расчётами. Завершает кейс; первый полный кейс семейства даёт 40 XP.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object", "additionalProperties": false, "required": ["outcome", "reasonId"],
+                "properties": { "outcome": { "enum": ["keep", "revise"] }, "reasonId": { "type": "string" }, "alternativeDecisionId": { "type": ["string", "null"] } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabComparison" } } } },
+          "200": { "description": "уже сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LabComparison" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/reminders": {
+      "get": {
+        "summary": "Настройки уведомлений",
+        "description": "revision 0 — пользователь ещё не выбирал: mode off; suggestedMode — предложение, а не согласие. pushReady — режим включён, разрешение ОС получено и есть push token.",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Reminders" } } } } }
+      },
+      "put": {
+        "summary": "Сохранить согласие и расписание",
+        "description": "three_per_week — 1–3 дня недели; daily — все дни. localTime вне тихих часов 21:00–09:00 учебного пояса. Переход в off отменяет запланированные и зарезервированные задания.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object", "additionalProperties": false, "required": ["expectedRevision", "mode", "localTime"],
+                "properties": {
+                  "expectedRevision": { "type": "integer" }, "mode": { "enum": ["off", "three_per_week", "daily"] },
+                  "daysIso": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 7 } },
+                  "localTime": { "type": "string", "pattern": "^\\d{2}:\\d{2}$" },
+                  "categories": { "type": "array", "items": { "enum": ["learning", "event", "streak"] } },
+                  "pauseUntil": { "type": ["string", "null"], "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Reminders" } } } }, "409": { "$ref": "#/components/responses/Error" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/device": {
+      "put": {
+        "summary": "Обновить единственную установку и push token",
+        "description": "Новая установка или новый токен заменяют прежние. Токен хранится зашифрованным и в ответах не возвращается. permission ≠ granted отменяет запланированные задания. expectedRevision не нужен: состояние берётся из ОС.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object", "additionalProperties": false, "required": ["installationId", "platform", "provider", "permission"],
+                "properties": {
+                  "installationId": { "type": "string", "maxLength": 128 }, "platform": { "enum": ["ios", "android", "web"] },
+                  "provider": { "enum": ["expo", "fcm", "apns", "dryrun"] }, "pushToken": { "type": ["string", "null"], "maxLength": 512 },
+                  "permission": { "enum": ["granted", "denied", "undetermined"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "сохранено", "content": { "application/json": { "schema": { "type": "object", "properties": { "installationId": { "type": "string" }, "platform": { "type": "string" }, "provider": { "type": "string" }, "permission": { "type": "string" }, "hasPushToken": { "type": "boolean" }, "updatedAt": { "type": "string", "format": "date-time" } } } } } },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/telemetry": {
+      "post": {
+        "summary": "Принять allowlist наблюдений клиента",
+        "description": "1–20 событий; лишние поля (amount, note и т. п.) отклоняются. Без согласия на аналитику принимаются, но не хранятся (stored=false); notification_opened отмечает открытие уведомления всегда. Повтор clientEventId — duplicates.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object", "additionalProperties": false, "required": ["events"],
+                "properties": {
+                  "events": {
+                    "type": "array", "minItems": 1, "maxItems": 20,
+                    "items": {
+                      "type": "object", "additionalProperties": false, "required": ["clientEventId", "name", "clientOccurredAt"],
+                      "properties": {
+                        "clientEventId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" },
+                        "name": { "enum": ["app_opened", "assignment_opened", "explanation_opened", "lab_result_viewed", "challenge_viewed", "notification_opened"] },
+                        "clientOccurredAt": { "type": "string", "format": "date-time" },
+                        "targetId": { "type": ["string", "null"], "maxLength": 128 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "принято", "content": { "application/json": { "schema": { "type": "object", "properties": { "accepted": { "type": "integer" }, "duplicates": { "type": "integer" }, "stored": { "type": "boolean" } } } } } }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/legacy/assessment": {
+      "get": {
+        "summary": "Перенесённое окно старого D7",
+        "description": "Только для пользователей, у которых окно было открыто или ожидалось на момент переключения; без окна — 404. Окно открывается через 144 ч и закрывается через 216 ч после первого ответа в прежнем приложении. Вопрос виден только в статусе available, ключ — никогда. Не RS07, без XP и учебного дня.",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LegacyD7" } } } }, "404": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/legacy/assessment/answer": {
+      "post": {
+        "summary": "Ответить на перенесённый D7",
+        "description": "Ответ один и неизменен: повтор возвращает сохранённый результат с alreadyCompleted. Вне окна — 409 ASSESSMENT_UNAVAILABLE.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["choiceId", "reasonId"], "properties": { "choiceId": { "type": "string" }, "reasonId": { "type": "string" } } } } } },
+        "responses": {
+          "200": { "description": "принято", "content": { "application/json": { "schema": { "type": "object", "properties": { "correct": { "type": "boolean" }, "title": { "type": "string" }, "explanation": { "type": "string" }, "alreadyCompleted": { "type": "boolean" }, "assessment": { "$ref": "#/components/schemas/LegacyD7" } } } } } },
+          "404": { "$ref": "#/components/responses/Error" }, "409": { "$ref": "#/components/responses/Error" }, "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/challenges": {
+      "get": {
+        "summary": "Активные, предстоящие и архивные события",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Challenge" } } } } } } } }
+      }
+    },
+    "/challenges/{familyId}/participation": {
+      "parameters": [{ "name": "familyId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "summary": "Вступить в событие или продолжить архив",
+        "description": "Участие одно на семейство события. Связывается с уже выполненным или открытым экспериментом кейса, иначе создаёт новый. Тело — {}.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false } } } },
+        "responses": {
+          "201": { "description": "вступил", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Challenge" } } } },
+          "200": { "description": "уже участвует", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Challenge" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "get": {
+        "summary": "Эпизоды завершения на основе лабораторных фактов",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Challenge" } } } }, "404": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/inventory": {
+      "get": {
+        "summary": "Открытая косметика и выбранное оформление",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Inventory" } } } } }
+      }
+    },
+    "/inventory/equipment": {
+      "put": {
+        "summary": "Выбрать уже открытую косметику",
+        "description": "Отсутствующий слот не меняется, null снимает предмет. Закрытый предмет — 422 COSMETIC_LOCKED.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["expectedRevision", "equipment"], "properties": { "expectedRevision": { "type": "integer" }, "equipment": { "type": "object", "additionalProperties": { "type": ["string", "null"] } } } } } }
+        },
+        "responses": { "200": { "description": "сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Inventory" } } } }, "409": { "$ref": "#/components/responses/Error" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/money/plan": {
+      "get": {
+        "summary": "Бюджет и цель с одним источником истины",
+        "description": "revision 0 — план ещё не сохранялся.",
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MoneyPlan" } } } } }
+      },
+      "put": {
+        "summary": "Атомарно сохранить бюджет и текущую цель",
+        "description": "Все поля обязательны. goal с goalId текущей цели — правка; без goalId — новая цель вместо текущей; null — без цели. Чужой goalId — 409 GOAL_CHANGED.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object", "additionalProperties": false,
+                "required": ["expectedRevision", "incomeMinor", "reserveMinor", "monthlyContributionMinor", "categories"],
+                "properties": {
+                  "expectedRevision": { "type": "integer" },
+                  "incomeMinor": { "$ref": "#/components/schemas/Minor" }, "reserveMinor": { "$ref": "#/components/schemas/Minor" },
+                  "monthlyContributionMinor": { "$ref": "#/components/schemas/Minor" },
+                  "categories": {
+                    "type": "object", "additionalProperties": false, "required": ["foodMinor", "transportMinor", "housingMinor", "otherMinor"],
+                    "properties": { "foodMinor": { "$ref": "#/components/schemas/Minor" }, "transportMinor": { "$ref": "#/components/schemas/Minor" }, "housingMinor": { "$ref": "#/components/schemas/Minor" }, "otherMinor": { "$ref": "#/components/schemas/Minor" } }
+                  },
+                  "goal": {
+                    "oneOf": [
+                      { "type": "null" },
+                      { "type": "object", "additionalProperties": false, "required": ["title", "targetMinor", "savedMinor", "months"], "properties": { "goalId": { "type": ["string", "null"] }, "title": { "type": "string", "minLength": 1, "maxLength": 80 }, "targetMinor": { "type": "integer", "minimum": 1, "maximum": 100000000 }, "savedMinor": { "$ref": "#/components/schemas/Minor" }, "months": { "type": "integer", "minimum": 1, "maximum": 120 } } }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MoneyPlan" } } } }, "409": { "$ref": "#/components/responses/Error" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/money/expenses": {
+      "get": {
+        "summary": "Страница журнала включая отменённые записи",
+        "parameters": [
+          { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" },
+          { "name": "month", "in": "query", "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" }, "description": "Период и итоги по категориям только по неотменённым записям." }
+        ],
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Expense" } }, "nextCursor": { "type": ["string", "null"] }, "month": { "type": ["string", "null"] }, "totalsMinor": { "type": ["object", "null"], "additionalProperties": { "type": "integer" } } } } } } } }
+      },
+      "post": {
+        "summary": "Добавить самостоятельную запись расхода",
+        "description": "Самоотчёт: не меняет план, цель и виртуальный капитал. Будущая дата по учебному поясу запрещена; лимит 500 записей включая отменённые (409 EXPENSE_LIMIT).",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["amountMinor", "categoryId", "occurredOn"], "properties": { "amountMinor": { "type": "integer", "minimum": 1, "maximum": 100000000 }, "categoryId": { "enum": ["food", "transport", "housing", "other"] }, "occurredOn": { "type": "string", "format": "date" }, "note": { "type": "string", "maxLength": 200 } } } } } },
+        "responses": { "201": { "description": "создано", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Expense" } } } }, "409": { "$ref": "#/components/responses/Error" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/money/expenses/{expenseId}": {
+      "parameters": [{ "name": "expenseId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "patch": {
+        "summary": "Отменить или восстановить запись с revision",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["expectedRevision", "voided"], "properties": { "expectedRevision": { "type": "integer" }, "voided": { "type": "boolean" } } } } } },
+        "responses": { "200": { "description": "сохранено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Expense" } } } }, "404": { "$ref": "#/components/responses/Error" }, "409": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/money/checkins": {
+      "get": {
+        "summary": "Страница самостоятельных отметок цели",
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Checkin" } }, "nextCursor": { "type": ["string", "null"] } } } } } } }
+      },
+      "post": {
+        "summary": "Отметить накопление или пересмотр",
+        "description": "saved прибавляет сумму к накопленному текущей цели (не банковский перевод) и увеличивает revision плана. Без цели — 409 NO_ACTIVE_GOAL. XP и учебный день не даёт.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "enum": ["saved", "reviewed"] }, "amountMinor": { "type": ["integer", "null"] }, "reviewedFields": { "type": "array", "items": { "enum": ["amount", "date", "budget"] } }, "note": { "type": "string", "maxLength": 200 } } } } } },
+        "responses": { "201": { "description": "создано", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Checkin" } } } }, "409": { "$ref": "#/components/responses/Error" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/money/actions": {
+      "get": {
+        "summary": "Страница запланированных действий",
+        "description": "Сначала pending по сроку, затем история.",
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/PlannedAction" } }, "nextCursor": { "type": ["string", "null"] } } } } } } }
+      },
+      "post": {
+        "summary": "Запланировать пополнение или пересмотр",
+        "description": "Дата от сегодня до 30 дней по учебному поясу; не больше 20 pending (409 ACTION_LIMIT).",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["kind", "dueOn"], "properties": { "kind": { "enum": ["save", "review"] }, "amountMinor": { "type": ["integer", "null"] }, "note": { "type": "string", "maxLength": 200 }, "dueOn": { "type": "string", "format": "date" } } } } } },
+        "responses": { "201": { "description": "создано", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannedAction" } } } }, "409": { "$ref": "#/components/responses/Error" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/money/actions/{actionId}/completion": {
+      "parameters": [{ "name": "actionId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "summary": "Выполнить действие и создать одну отметку",
+        "description": "Повтор возвращает выполненное действие. Если текущая цель уже другая — 409 GOAL_CHANGED. Тело — {}.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false } } } },
+        "responses": { "200": { "description": "выполнено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannedAction" } } } }, "409": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/money/actions/{actionId}/cancellation": {
+      "parameters": [{ "name": "actionId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "summary": "Отменить ещё не выполненное действие",
+        "description": "Выполненное — 409 ACTION_COMPLETED. Тело — {}.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false } } } },
+        "responses": { "200": { "description": "отменено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannedAction" } } } }, "409": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/learning/attempts/{attemptId}/submission": {
+      "parameters": [{ "$ref": "#/components/parameters/AttemptId" }],
+      "post": {
+        "summary": "Принять выбор и объяснение",
+        "description": "Тот же выбор повторно — сохранённая квитанция (200). Другой выбор в закрытой попытке — 409 ATTEMPT_CLOSED. Неизвестный вариант — 422 UNKNOWN_OPTION без завершения.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubmissionRequest" } } } },
+        "responses": {
+          "201": { "description": "принят", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Receipt" } } } },
+          "200": { "description": "уже принят", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Receipt" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "bearer": { "type": "http", "scheme": "bearer", "description": "Opaque token из POST /sessions." } },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key", "in": "header", "required": true,
+        "description": "UUID либо 1–80 ASCII букв, цифр, дефисов и подчёркиваний. Область — пользователь плюс ключ.",
+        "schema": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" }
+      },
+      "AttemptId": { "name": "attemptId", "in": "path", "required": true, "schema": { "type": "string" } },
+      "ExperimentId": { "name": "experimentId", "in": "path", "required": true, "schema": { "type": "string" } },
+      "Limit": { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 } },
+      "Cursor": { "name": "cursor", "in": "query", "schema": { "type": "string" }, "description": "nextCursor предыдущей страницы." },
+      "RunId": { "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }
+    },
+    "responses": {
+      "Error": { "description": "ошибка", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object", "required": ["code", "message", "requestId"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "examples": ["INVALID_JSON", "IDEMPOTENCY_KEY_REQUIRED", "UNAUTHORIZED", "NOT_FOUND", "ATTEMPT_CLOSED", "SET_NOT_AVAILABLE", "SET_FINALIZED", "SET_INVALIDATED", "INVALID_ALLOCATION", "EXPERIMENT_COMPLETED", "DECISION_LIMIT", "REFLECTION_EXISTS", "COMPARISON_NOT_READY", "COMPARISON_EXISTS", "GOAL_CHANGED", "NO_ACTIVE_GOAL", "EXPENSE_LIMIT", "ACTION_LIMIT", "ACTION_COMPLETED", "ACTION_CANCELLED", "COSMETIC_LOCKED", "CHALLENGE_NOT_STARTED", "CHALLENGE_WITHDRAWN", "ASSESSMENT_UNAVAILABLE", "RATE_LIMITED", "ASSIGNMENT_COMPLETED", "PRACTICE_NOT_AVAILABLE", "SUPPORT_UNAVAILABLE", "REVISION_CONFLICT", "IDEMPOTENCY_CONFLICT", "TIMEZONE_LOCKED", "CONTENT_WITHDRAWN", "PAYLOAD_TOO_LARGE", "UNSUPPORTED_MEDIA_TYPE", "VALIDATION_FAILED", "UNKNOWN_OPTION", "UNKNOWN_TERM", "CONTENT_UNAVAILABLE", "INTERNAL"]
+          },
+          "message": { "type": "string" },
+          "requestId": { "type": "string" },
+          "fieldErrors": { "type": "array", "items": { "type": "object", "required": ["field", "message"], "properties": { "field": { "type": "string" }, "message": { "type": "string" } } } }
+        }
+      },
+      "SessionRequest": { "type": "object", "additionalProperties": false, "properties": { "installationId": { "type": "string", "maxLength": 128 } } },
+      "Session": {
+        "type": "object", "required": ["userId", "token", "profile"],
+        "properties": { "userId": { "type": "string" }, "token": { "type": "string", "description": "256 бит, base64url. Хранить в SecureStore." }, "profile": { "$ref": "#/components/schemas/Profile" } }
+      },
+      "Profile": {
+        "type": "object",
+        "required": ["userId", "nickname", "ageGroup", "characterId", "reducedMotion", "route", "learningTimezone", "timezoneLocked", "revision", "createdAt"],
+        "properties": {
+          "userId": { "type": "string" },
+          "nickname": { "type": ["string", "null"] },
+          "ageGroup": { "enum": ["14-17", "18-20", "other", null] },
+          "characterId": { "enum": ["lumi", "spark", "nova", null] },
+          "reducedMotion": { "type": "boolean" },
+          "route": { "enum": ["starter", "full"] },
+          "learningTimezone": { "type": ["string", "null"], "description": "IANA" },
+          "analyticsEnabled": { "type": "boolean", "description": "Опциональный экспорт и клиентская аналитика; выключение не влияет на XP и ответы." },
+          "timezoneLocked": { "type": "boolean" },
+          "revision": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProfilePatch": {
+        "type": "object", "additionalProperties": false, "required": ["expectedRevision"],
+        "description": "Отсутствующее поле не меняется; null очищает необязательное поле.",
+        "properties": {
+          "expectedRevision": { "type": "integer" },
+          "nickname": { "type": ["string", "null"], "minLength": 1, "maxLength": 40 },
+          "ageGroup": { "enum": ["14-17", "18-20", "other", null] },
+          "characterId": { "enum": ["lumi", "spark", "nova", null] },
+          "reducedMotion": { "type": "boolean" },
+          "route": { "enum": ["starter", "full"] },
+          "learningTimezone": { "type": ["string", "null"] },
+          "analyticsEnabled": { "type": "boolean" }
+        }
+      },
+      "Bootstrap": {
+        "type": "object", "required": ["profile", "program", "progress", "assessmentSets"],
+        "properties": {
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "legacy": {
+            "type": "object", "description": "Перенесённая история прежнего приложения: без новых наград.",
+            "properties": {
+              "imported": { "type": "boolean" }, "investmentLessonsSeen": { "type": "integer" },
+              "d7": { "oneOf": [{ "type": "null" }, { "type": "object", "properties": { "status": { "type": "string" }, "availableAt": { "type": "string", "format": "date-time" }, "closesAt": { "type": "string", "format": "date-time" } } }] }
+            }
+          },
+          "assessmentSets": {
+            "type": "array",
+            "description": "Статусы и охват наборов без правильности.",
+            "items": { "type": "object", "properties": { "setId": { "type": "string" }, "kind": { "type": "string" }, "label": { "type": "string" }, "status": { "type": "string" }, "dueAt": { "type": ["string", "null"] }, "answered": { "type": "integer" }, "assigned": { "type": "integer" } } }
+          },
+          "program": { "type": "object", "properties": { "version": { "type": "string" }, "route": { "enum": ["starter", "full"] } } },
+          "progress": {
+            "type": "object",
+            "properties": {
+              "learningCompleted": { "type": "integer" }, "learningTotal": { "type": "integer" },
+              "routeCompleted": { "type": "integer" }, "routeTotal": { "type": "integer" },
+              "nextAssignmentId": { "type": ["string", "null"] }, "activeAttemptId": { "type": ["string", "null"] }
+            }
+          }
+        }
+      },
+      "Assignment": {
+        "type": "object",
+        "required": ["assignmentId", "role", "practiceOrigin", "familyId", "itemId", "moduleId", "title", "subtitle", "status", "inRoute", "activeAttemptId", "createdAt", "completedAt"],
+        "properties": {
+          "assignmentId": { "type": "string" },
+          "role": { "enum": ["learning", "practice"] },
+          "practiceOrigin": { "enum": ["manual", "scheduled", null] },
+          "familyId": { "type": "string" }, "itemId": { "type": "string" }, "moduleId": { "type": "string" },
+          "title": { "type": "string" }, "subtitle": { "type": "string" },
+          "status": { "enum": ["open", "completed", "withdrawn"] },
+          "inRoute": { "type": "boolean", "description": "Рекомендация маршрута, не блокировка." },
+          "activeAttemptId": { "type": ["string", "null"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "Option": { "type": "object", "required": ["id", "text"], "properties": { "id": { "type": "string" }, "text": { "type": "string" } } },
+      "Card": {
+        "type": "object", "description": "Публичная проекция: ключи, подсказка и разбор сюда не входят. Порядок вариантов зафиксирован при выдаче.",
+        "properties": {
+          "purpose": { "enum": ["learning", "diagnostic", "review"] }, "moduleId": { "type": "string" },
+          "title": { "type": "string" }, "subtitle": { "type": "string" }, "concept": { "type": "string" },
+          "example": { "type": "string" }, "question": { "type": "string" },
+          "choices": { "type": "array", "items": { "$ref": "#/components/schemas/Option" } },
+          "reasons": { "type": "array", "items": { "$ref": "#/components/schemas/Option" } },
+          "termIds": { "type": "array", "items": { "type": "string" } },
+          "sources": { "type": "array", "items": { "type": "object", "properties": { "title": { "type": "string" }, "url": { "type": "string", "format": "uri" } } } }
+        }
+      },
+      "Submission": {
+        "type": "object",
+        "properties": {
+          "submissionId": { "type": "string" }, "choiceId": { "type": "string" }, "reasonId": { "type": "string" },
+          "confidence": { "enum": ["sure", "unsure", "guess", null] }, "acceptedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Evaluation": {
+        "type": "object",
+        "properties": {
+          "choiceCorrect": { "type": "boolean" }, "reasonCorrect": { "type": "boolean" },
+          "passed": { "type": "boolean", "description": "Совпадение допустимой пары." },
+          "explanation": { "type": "string" }, "choiceFeedback": { "type": "string" }, "reasonFeedback": { "type": "string" }
+        }
+      },
+      "Attempt": {
+        "type": "object",
+        "properties": {
+          "attemptId": { "type": "string" }, "assignmentId": { "type": "string" },
+          "role": { "enum": ["learning", "practice", "diagnostic", "review"] },
+          "status": { "enum": ["started", "submitted", "abandoned", "withdrawn"] },
+          "familyId": { "type": "string" }, "itemId": { "type": "string" },
+          "revision": { "type": "integer" }, "gradingRevision": { "type": "integer" },
+          "locale": { "type": "string" }, "programVersion": { "type": "string" },
+          "issuedAt": { "type": "string", "format": "date-time" },
+          "closedAt": { "type": ["string", "null"], "format": "date-time" },
+          "assistanceUsed": { "type": "boolean" },
+          "card": { "$ref": "#/components/schemas/Card" },
+          "submission": { "oneOf": [{ "$ref": "#/components/schemas/Submission" }, { "type": "null" }] },
+          "evaluation": { "oneOf": [{ "$ref": "#/components/schemas/Evaluation" }, { "type": "null" }] }
+        }
+      },
+      "SubmissionRequest": {
+        "type": "object", "additionalProperties": false, "required": ["choiceId", "reasonId"],
+        "properties": {
+          "choiceId": { "type": "string" }, "reasonId": { "type": "string" },
+          "confidence": { "enum": ["sure", "unsure", "guess", null] },
+          "clientCompletedAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "Receipt": {
+        "type": "object",
+        "description": "В diagnostic/review evaluation равна null до финализации набора.",
+        "properties": {
+          "attemptId": { "type": "string" }, "completed": { "const": true },
+          "firstForFamily": { "type": "boolean" },
+          "submission": { "$ref": "#/components/schemas/Submission" },
+          "evaluation": { "oneOf": [{ "$ref": "#/components/schemas/Evaluation" }, { "type": "null" }] },
+          "assessment": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "object", "properties": { "setId": { "type": "string" }, "status": { "type": "string" }, "answered": { "type": "integer" }, "assigned": { "type": "integer" }, "finalized": { "type": "boolean" } } }
+            ]
+          }
+        }
+      },
+      "Reminders": {
+        "type": "object",
+        "properties": {
+          "revision": { "type": "integer" }, "mode": { "enum": ["off", "three_per_week", "daily"] }, "suggestedMode": { "type": "string" },
+          "daysIso": { "type": "array", "items": { "type": "integer" } }, "localTime": { "type": "string" },
+          "categories": { "type": "array", "items": { "type": "string" } }, "pauseUntil": { "type": ["string", "null"], "format": "date" },
+          "autoPauseUntil": { "type": ["string", "null"], "format": "date-time", "description": "Автопауза после двух принятых провайдером приглашений без учебного возвращения за 7 дней; снимается учебным действием." },
+          "quietHours": { "type": "array", "items": { "type": "string" } },
+          "permission": { "enum": ["granted", "denied", "undetermined"] }, "pushReady": { "type": "boolean" }
+        }
+      },
+      "LegacyD7": {
+        "type": "object",
+        "properties": {
+          "status": { "enum": ["waiting", "available", "expired", "completed"] },
+          "availableAt": { "type": "string", "format": "date-time" }, "closesAt": { "type": "string", "format": "date-time" },
+          "correct": { "type": ["boolean", "null"] }, "question": { "type": "string" }, "context": { "type": "string" },
+          "choices": { "type": "array", "items": { "$ref": "#/components/schemas/Option" } }, "reasons": { "type": "array", "items": { "$ref": "#/components/schemas/Option" } }
+        }
+      },
+      "Minor": { "type": "integer", "minimum": 0, "maximum": 100000000, "description": "Копейки; безопасно для JavaScript." },
+      "MoneyPlan": {
+        "type": "object",
+        "properties": {
+          "revision": { "type": "integer" },
+          "incomeMinor": { "type": "integer" }, "reserveMinor": { "type": "integer" }, "monthlyContributionMinor": { "type": "integer" },
+          "foodMinor": { "type": "integer" }, "transportMinor": { "type": "integer" }, "housingMinor": { "type": "integer" }, "otherMinor": { "type": "integer" },
+          "essentialMinor": { "type": "integer" }, "cashMinor": { "type": "integer", "description": "Может быть отрицательным: это допустимое состояние плана." },
+          "availableMinor": { "type": "integer" }, "unallocatedMinor": { "type": "integer" },
+          "goal": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "object", "properties": { "goalId": { "type": "string" }, "title": { "type": "string" }, "targetMinor": { "type": "integer" }, "savedMinor": { "type": "integer" }, "months": { "type": "integer" }, "updatedAt": { "type": "string", "format": "date-time" }, "remainingMinor": { "type": "integer" }, "requiredMonthlyMinor": { "type": "integer" }, "projectedMinor": { "type": "integer" }, "planFeasible": { "type": "boolean" }, "goalAchieved": { "type": "boolean" }, "suggestedMonths": { "type": ["integer", "null"] } } }
+            ]
+          },
+          "updatedAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "Expense": {
+        "type": "object",
+        "properties": { "expenseId": { "type": "string" }, "revision": { "type": "integer" }, "amountMinor": { "type": "integer" }, "categoryId": { "enum": ["food", "transport", "housing", "other"] }, "occurredOn": { "type": "string", "format": "date" }, "note": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" }, "voidedAt": { "type": ["string", "null"], "format": "date-time" } }
+      },
+      "Checkin": {
+        "type": "object",
+        "properties": { "checkinId": { "type": "string" }, "goalId": { "type": "string" }, "kind": { "enum": ["saved", "reviewed"] }, "amountMinor": { "type": ["integer", "null"] }, "reviewedFields": { "type": "array", "items": { "type": "string" }, "description": "У перенесённых записей может быть unknown." }, "note": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" } }
+      },
+      "PlannedAction": {
+        "type": "object",
+        "properties": { "actionId": { "type": "string" }, "goalId": { "type": "string" }, "kind": { "enum": ["save", "review"] }, "amountMinor": { "type": ["integer", "null"] }, "note": { "type": "string" }, "dueOn": { "type": "string", "format": "date" }, "status": { "enum": ["pending", "completed", "cancelled"] }, "checkinId": { "type": ["string", "null"] }, "createdAt": { "type": "string", "format": "date-time" }, "completedAt": { "type": ["string", "null"], "format": "date-time" }, "cancelledAt": { "type": ["string", "null"], "format": "date-time" } }
+      },
+      "Challenge": {
+        "type": "object",
+        "properties": {
+          "familyId": { "type": "string" }, "revision": { "type": "integer" }, "title": { "type": "string" }, "description": { "type": "string" },
+          "phase": { "enum": ["upcoming", "live", "archived", "withdrawn"] },
+          "startsAt": { "type": "string", "format": "date-time" }, "endsAt": { "type": "string", "format": "date-time" },
+          "caseFamilyId": { "type": "string" }, "cosmeticId": { "type": "string" },
+          "episodes": { "type": "array", "items": { "type": "object", "properties": { "id": { "enum": ["decision", "early_exit", "comparison"] }, "title": { "type": "string" }, "done": { "type": "boolean" } } } },
+          "participation": { "oneOf": [{ "type": "null" }, { "type": "object", "properties": { "participationId": { "type": "string" }, "revision": { "type": "integer" }, "experimentId": { "type": "string" }, "joinedAt": { "type": "string", "format": "date-time" }, "completedAt": { "type": ["string", "null"], "format": "date-time" } } }] }
+        }
+      },
+      "Inventory": {
+        "type": "object",
+        "properties": {
+          "characterId": { "enum": ["lumi", "spark", "nova", null] },
+          "revision": { "type": "integer" },
+          "items": { "type": "array", "items": { "type": "object", "properties": { "cosmeticId": { "type": "string" }, "title": { "type": "string" }, "slot": { "enum": ["background", "accessory"] }, "unlocked": { "type": "boolean" }, "unlockedAt": { "type": ["string", "null"], "format": "date-time" }, "source": { "type": "string" } } } },
+          "equipment": { "type": "object", "additionalProperties": { "type": ["string", "null"] } }
+        }
+      },
+      "Allocation": {
+        "type": "object", "additionalProperties": false,
+        "description": "10 бюджетных долей по 1 000 виртуальных ₽, целые 0–10, сумма 10.",
+        "properties": { "cash": { "type": "integer" }, "bond": { "type": "integer" }, "stock": { "type": "integer" }, "fund": { "type": "integer" } }
+      },
+      "LabCase": {
+        "type": "object",
+        "properties": {
+          "caseFamilyId": { "type": "string" }, "revision": { "type": "integer" }, "bundleRevision": { "type": "integer" }, "modelVersion": { "type": "string" },
+          "title": { "type": "string" }, "conditions": { "type": "string" },
+          "initialMinor": { "type": "integer" }, "reserveMinMinor": { "type": "integer" }, "unitMinor": { "type": "integer" }, "units": { "type": "integer" },
+          "assets": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "description": { "type": "string" } } } },
+          "scenarios": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "months": { "type": "integer" } } } },
+          "decisionReasons": { "type": "array", "items": { "$ref": "#/components/schemas/Option" } },
+          "notIncluded": { "type": "array", "items": { "type": "string" } },
+          "notice": { "type": "string" }
+        }
+      },
+      "LabDecision": {
+        "type": "object",
+        "properties": {
+          "decisionId": { "type": "string" }, "experimentId": { "type": "string" },
+          "kind": { "enum": ["original", "alternative"] }, "sourceDecisionId": { "type": ["string", "null"] },
+          "allocation": { "$ref": "#/components/schemas/Allocation" }, "reasonId": { "type": "string" },
+          "reasonStatus": { "enum": ["supported", "misconception"] }, "constraintStatus": { "enum": ["met", "reserve_violated"] },
+          "note": { "type": ["string", "null"] }, "committedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LabRun": {
+        "type": "object",
+        "properties": {
+          "runId": { "type": "string" }, "experimentId": { "type": "string" }, "decisionId": { "type": "string" },
+          "decisionKind": { "enum": ["original", "alternative"] }, "scenarioId": { "type": "string" }, "scenarioTitle": { "type": "string" },
+          "months": { "type": "integer" }, "modelVersion": { "type": "string" },
+          "rates": { "type": "object", "additionalProperties": { "type": "object", "properties": { "priceBps": { "type": "integer" }, "incomeBps": { "type": "integer" } } } },
+          "result": {
+            "type": "object",
+            "properties": {
+              "scenarioId": { "type": "string" }, "months": { "type": "integer" },
+              "initialMinor": { "type": "integer" }, "endingMinor": { "type": "integer" }, "profitMinor": { "type": "integer" },
+              "feesMinor": { "type": "integer" }, "incomeMinor": { "type": "integer" }, "priceChangeMinor": { "type": "integer" },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "asset": { "type": "string" }, "units": { "type": "integer" }, "budgetMinor": { "type": "integer" },
+                    "principalMinor": { "type": "integer" }, "entryFeeMinor": { "type": "integer" }, "remainderMinor": { "type": "integer" },
+                    "priceChangeMinor": { "type": "integer" }, "incomeMinor": { "type": "integer" }, "marketValueMinor": { "type": "integer" },
+                    "exitFeeMinor": { "type": "integer" }, "endingMinor": { "type": "integer" }, "profitMinor": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "probe": { "type": "object", "description": "Вопрос без ключа.", "properties": { "question": { "type": "string" }, "choices": { "type": "array", "items": { "$ref": "#/components/schemas/Option" } }, "reasons": { "type": "array", "items": { "$ref": "#/components/schemas/Option" } } } },
+          "reflection": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "object", "properties": { "choiceId": { "type": "string" }, "reasonId": { "type": "string" }, "choiceCorrect": { "type": "boolean" }, "reasonCorrect": { "type": "boolean" }, "passed": { "type": "boolean" }, "explanation": { "type": "string" }, "choiceFeedback": { "type": "string" }, "reasonFeedback": { "type": "string" }, "acceptedAt": { "type": "string", "format": "date-time" } } }
+            ]
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "notice": { "type": "string" }
+        }
+      },
+      "LabComparison": {
+        "type": "object",
+        "properties": {
+          "outcome": { "enum": ["keep", "revise"] }, "reasonId": { "type": "string" }, "reasonStatus": { "enum": ["supported", "misconception"] },
+          "alternativeDecisionId": { "type": ["string", "null"] }, "comparedAt": { "type": "string", "format": "date-time" },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scenarioId": { "type": "string" }, "months": { "type": "integer" },
+                "original": { "type": "object", "properties": { "decisionId": { "type": "string" }, "endingMinor": { "type": "integer" }, "profitMinor": { "type": "integer" } } },
+                "alternative": { "oneOf": [{ "type": "null" }, { "type": "object", "properties": { "decisionId": { "type": "string" }, "endingMinor": { "type": "integer" }, "profitMinor": { "type": "integer" } } }] }
+              }
+            }
+          }
+        }
+      },
+      "LabExperiment": {
+        "type": "object",
+        "properties": {
+          "experimentId": { "type": "string" }, "status": { "enum": ["open", "completed"] },
+          "createdAt": { "type": "string", "format": "date-time" }, "completedAt": { "type": ["string", "null"], "format": "date-time" },
+          "case": { "$ref": "#/components/schemas/LabCase" },
+          "decisions": { "type": "array", "items": { "$ref": "#/components/schemas/LabDecision" } },
+          "runs": { "type": "array", "items": { "type": "object", "properties": { "runId": { "type": "string" }, "decisionId": { "type": "string" }, "scenarioId": { "type": "string" }, "endingMinor": { "type": "integer" }, "profitMinor": { "type": "integer" }, "reflected": { "type": "boolean" } } } },
+          "completion": { "type": "object", "properties": { "originalDecision": { "type": "boolean" }, "originalRuns": { "type": "integer" }, "originalReflections": { "type": "integer" }, "required": { "type": "integer" }, "comparison": { "type": "boolean" }, "complete": { "type": "boolean" } } },
+          "comparison": { "oneOf": [{ "type": "null" }, { "$ref": "#/components/schemas/LabComparison" }] }
+        }
+      },
+      "Progress": {
+        "type": "object",
+        "properties": {
+          "participation": {
+            "type": "object",
+            "description": "Роль участия показывает выполненную работу, а не уровень знаний.",
+            "properties": {
+              "xp": { "type": "integer" }, "maxXp": { "type": "integer" },
+              "role": { "type": "object", "properties": { "id": { "enum": ["newcomer", "explorer", "practitioner", "strategist", "navigator"] }, "title": { "type": "string" } } },
+              "nextRole": { "oneOf": [{ "type": "null" }, { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "missing": { "type": "array", "items": { "type": "object", "properties": { "kind": { "enum": ["xp", "learningFamilies", "modulesWithCompletion", "completeLabCase"] }, "have": { "type": "integer" }, "need": { "type": "integer" } } } } } }] },
+              "learningFamilies": { "type": "integer" }, "modulesWithCompletion": { "type": "integer" }, "labCasesCompleted": { "type": "integer" }
+            }
+          },
+          "activity": {
+            "type": "object",
+            "properties": {
+              "timezone": { "type": "string" }, "timezoneLocked": { "type": "boolean" },
+              "today": { "type": "string", "format": "date" }, "todayStatus": { "enum": ["active", "pending"] },
+              "currentActiveDays": { "type": "integer" }, "currentProtectedDays": { "type": "integer" },
+              "bestActiveDays": { "type": "integer" }, "totalActiveDays": { "type": "integer" }, "freezeCharges": { "type": "integer" }
+            }
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "evidence": { "type": "array", "items": { "type": "object", "properties": { "outcomeId": { "type": "string" }, "text": { "type": "string" }, "acceptedAt": { "type": "string", "format": "date-time" }, "localDate": { "type": "string", "format": "date" }, "actualDelaySeconds": { "type": ["integer", "null"] }, "status": { "enum": ["valid", "corrected", "invalidated"] } } } },
+              "review": { "type": "object", "properties": { "assigned": { "type": "integer" }, "answered": { "type": "integer" }, "correct": { "type": "integer", "description": "Только финализированные наборы." }, "skipped": { "type": "integer" }, "pending": { "type": "integer" }, "excluded": { "type": "integer" } } }
+            }
+          },
+          "badges": { "type": "array", "items": { "type": "object", "properties": { "badgeId": { "type": "string" }, "title": { "type": "string" }, "grantedAt": { "type": "string", "format": "date-time" }, "confirmation": { "enum": ["participation", "practice", "evidence"] }, "confirmedLaterAt": { "type": ["string", "null"], "format": "date-time" }, "confirmationStatus": { "enum": ["valid", "corrected", "invalidated"] } } } }
+        }
+      },
+      "AssessmentSet": {
+        "type": "object",
+        "properties": {
+          "setId": { "type": "string" },
+          "kind": { "enum": ["diagnostic", "review"] },
+          "slotFamilyId": { "type": "string" },
+          "label": { "type": "string" },
+          "status": { "enum": ["waiting", "available", "in_progress", "completed", "partial", "skipped", "invalidated"] },
+          "dueAt": { "type": ["string", "null"], "format": "date-time", "description": "Максимум сроков карточек; null, пока не приняты все якоря." },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "finalizedAt": { "type": ["string", "null"], "format": "date-time" },
+          "finalizedStatus": { "enum": ["completed", "partial", "skipped", null] },
+          "baselineEligible": { "type": ["boolean", "null"], "description": "Только диагностика: завершена до первого учебного разбора." },
+          "invalidationReason": { "type": ["string", "null"] },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "assigned": { "type": "integer" }, "answered": { "type": "integer" }, "pending": { "type": "integer" },
+              "skipped": { "type": "integer" }, "excluded": { "type": "integer" },
+              "correct": { "type": ["integer", "null"], "description": "null до финализации." }
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "assignmentId": { "type": "string" },
+                "status": { "enum": ["open", "completed", "skipped", "withdrawn"] },
+                "itemId": { "type": ["string", "null"], "description": "null, пока набор не открыт." },
+                "title": { "type": ["string", "null"], "description": "null, пока набор не открыт." },
+                "dueAt": { "type": ["string", "null"], "format": "date-time" },
+                "anchorAcceptedAt": { "type": ["string", "null"], "format": "date-time" },
+                "submittedAt": { "type": ["string", "null"], "format": "date-time" },
+                "missingAnchors": { "type": "array", "items": { "type": "object", "properties": { "familyId": { "type": "string" }, "assignmentId": { "type": "string" }, "title": { "type": "string" } } } },
+                "result": {
+                  "oneOf": [
+                    { "type": "null" },
+                    { "type": "object", "properties": { "choiceCorrect": { "type": "boolean" }, "reasonCorrect": { "type": "boolean" }, "passed": { "type": "boolean" }, "actualDelaySeconds": { "type": ["integer", "null"] } } }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Support": {
+        "type": "object",
+        "properties": {
+          "kind": { "enum": ["hint", "term"] }, "hint": { "type": "string" },
+          "term": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "definition": { "type": "string" } } }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+/teylapi
+/teylctl
+*.exe
+.env
+/legacy-backups/

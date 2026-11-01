@@ -1,0 +1,29 @@
+{
+  "modelVersion": "teyl-lab-budget-v2",
+  "provenance": "Итоги взяты из приложения В спецификации v0.1 (9 эталонов) и вручную пересчитаны по формулам §11. Исходный calculation-fixtures.json с 24 подробными эталонами не передан; полное пространство 286 × 3 проверяется в calc_test.go независимым расчётом на рациональных числах. Эталон V1 9025,02 ₽ для модели V2 не используется.",
+  "fixtures": [
+    { "allocation": { "cash": 10, "bond": 0, "stock": 0, "fund": 0 }, "scenarioId": "growth", "months": 3, "endingMinor": 1000000, "profitMinor": 0 },
+    { "allocation": { "cash": 10, "bond": 0, "stock": 0, "fund": 0 }, "scenarioId": "down", "months": 3, "endingMinor": 1000000, "profitMinor": 0 },
+    { "allocation": { "cash": 10, "bond": 0, "stock": 0, "fund": 0 }, "scenarioId": "early", "months": 1, "endingMinor": 1000000, "profitMinor": 0 },
+    { "allocation": { "cash": 2, "bond": 3, "stock": 3, "fund": 2 }, "scenarioId": "growth", "months": 3, "endingMinor": 1033336, "profitMinor": 33336 },
+    { "allocation": { "cash": 2, "bond": 3, "stock": 3, "fund": 2 }, "scenarioId": "down", "months": 3, "endingMinor": 902598, "profitMinor": -97402 },
+    { "allocation": { "cash": 2, "bond": 3, "stock": 3, "fund": 2 }, "scenarioId": "early", "months": 1, "endingMinor": 955486, "profitMinor": -44514 },
+    { "allocation": { "cash": 4, "bond": 0, "stock": 0, "fund": 6 }, "scenarioId": "growth", "months": 3, "endingMinor": 1022754, "profitMinor": 22754 },
+    { "allocation": { "cash": 4, "bond": 0, "stock": 0, "fund": 6 }, "scenarioId": "down", "months": 3, "endingMinor": 926946, "profitMinor": -73054 },
+    { "allocation": { "cash": 4, "bond": 0, "stock": 0, "fund": 6 }, "scenarioId": "early", "months": 1, "endingMinor": 968862, "profitMinor": -31138 }
+  ],
+  "rows": [
+    {
+      "note": "Строка облигаций 3 доли, рост: проверка самофинансируемой комиссии входа и округления",
+      "asset": "bond", "budgetMinor": 300000, "scenarioId": "growth",
+      "principalMinor": 299700, "entryFeeMinor": 300, "remainderMinor": 0,
+      "priceChangeMinor": 2997, "incomeMinor": 5994, "marketValueMinor": 302697, "exitFeeMinor": 303, "endingMinor": 308388
+    },
+    {
+      "note": "Строка фонда 6 долей: остаток в 1 копейку после комиссии входа",
+      "asset": "fund", "budgetMinor": 600000, "scenarioId": "growth",
+      "principalMinor": 599400, "entryFeeMinor": 599, "remainderMinor": 1,
+      "priceChangeMinor": 23976, "incomeMinor": 0, "marketValueMinor": 623376, "exitFeeMinor": 623, "endingMinor": 622754
+    }
+  ]
+}

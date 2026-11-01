@@ -1,0 +1,24 @@
+{
+  "provenance": "Восстановлено по §17–§18 спецификации v0.1. Три реплики взяты из примеров спецификации, остальные составлены в той же рамке. Подстановок нет: в lock screen не попадают сумма, цель, ошибочный ответ и состав портфеля. Реальная отправка в первом пилоте — только dry-run.",
+  "templates": [
+    { "templateId": "review_ready.nova", "revision": 1, "characterId": "nova", "triggerType": "review_ready", "title": "Нова", "body": "Готова новая задача по знакомой теме. Проверим решение без подсказок.", "targetRoute": "assessment-set" },
+    { "templateId": "review_ready.lumi", "revision": 1, "characterId": "lumi", "triggerType": "review_ready", "title": "Люми", "body": "Пришло время проверки по знакомой теме. Разберём её вместе.", "targetRoute": "assessment-set" },
+    { "templateId": "review_ready.spark", "revision": 1, "characterId": "spark", "triggerType": "review_ready", "title": "Искра", "body": "Открылась новая задача по знакомой теме. Можно начать, когда удобно.", "targetRoute": "assessment-set" },
+
+    { "templateId": "unfinished_attempt.spark", "revision": 1, "characterId": "spark", "triggerType": "unfinished_attempt", "title": "Искра", "body": "Твой разбор сохранён. Можно продолжить с этого шага.", "targetRoute": "attempt" },
+    { "templateId": "unfinished_attempt.lumi", "revision": 1, "characterId": "lumi", "triggerType": "unfinished_attempt", "title": "Люми", "body": "Задание ждёт там, где ты остановился. Продолжим?", "targetRoute": "attempt" },
+    { "templateId": "unfinished_attempt.nova", "revision": 1, "characterId": "nova", "triggerType": "unfinished_attempt", "title": "Нова", "body": "Начатое задание сохранено. Можно закончить его в любой момент.", "targetRoute": "attempt" },
+
+    { "templateId": "new_episode.lumi", "revision": 1, "characterId": "lumi", "triggerType": "new_episode", "title": "Люми", "body": "Есть новый случай: деньги понадобились раньше. Разберём, что меняется.", "targetRoute": "challenge" },
+    { "templateId": "new_episode.spark", "revision": 1, "characterId": "spark", "triggerType": "new_episode", "title": "Искра", "body": "Новый сценарий в лаборатории уже доступен. Можно начать с первого шага.", "targetRoute": "challenge" },
+    { "templateId": "new_episode.nova", "revision": 1, "characterId": "nova", "triggerType": "new_episode", "title": "Нова", "body": "Новый случай для проверки решения. Посмотрим, что изменится при другом сроке.", "targetRoute": "challenge" },
+
+    { "templateId": "gentle_return.lumi", "revision": 1, "characterId": "lumi", "triggerType": "gentle_return", "title": "Люми", "body": "Твой разбор сохранён. Продолжим, когда будет удобно.", "targetRoute": "next-step" },
+    { "templateId": "gentle_return.spark", "revision": 1, "characterId": "spark", "triggerType": "gentle_return", "title": "Искра", "body": "Всё сохранено. Можно вернуться с любого задания.", "targetRoute": "next-step" },
+    { "templateId": "gentle_return.nova", "revision": 1, "characterId": "nova", "triggerType": "gentle_return", "title": "Нова", "body": "Следующее задание готово. Начнём, когда найдётся время.", "targetRoute": "next-step" },
+
+    { "templateId": "streak.lumi", "revision": 1, "characterId": "lumi", "triggerType": "streak", "title": "Люми", "body": "Если найдётся пара минут, сегодняшнее задание уже ждёт.", "targetRoute": "next-step" },
+    { "templateId": "streak.spark", "revision": 1, "characterId": "spark", "triggerType": "streak", "title": "Искра", "body": "Одно задание сегодня — и день отмечен. Без спешки.", "targetRoute": "next-step" },
+    { "templateId": "streak.nova", "revision": 1, "characterId": "nova", "triggerType": "streak", "title": "Нова", "body": "Сегодня можно решить одну задачу. Выбери любую.", "targetRoute": "next-step" }
+  ]
+}

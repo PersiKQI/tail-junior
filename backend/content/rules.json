@@ -1,0 +1,106 @@
+{
+  "ruleVersion": "teyl-rules-2026-11-01-1",
+  "provenance": "Восстановлено по спецификации v0.1. Все значения — предлагаемые параметры первого релиза, а не результаты исследования (§1, §25).",
+  "identity": {
+    "tokenBits": 256,
+    "tokenHash": "sha256(utf8(token))",
+    "ageGroups": ["14-17", "18-20", "other"],
+    "nicknameMaxRunes": 40
+  },
+  "http": {
+    "maxBodyBytes": 16384,
+    "telemetryMaxEvents": 20,
+    "idempotencyKeyPattern": "^[A-Za-z0-9_-]{1,80}$",
+    "pageSizeDefault": 50,
+    "pageSizeMax": 100
+  },
+  "learning": {
+    "starterAssignments": 12,
+    "fullAssignments": 24,
+    "practiceMinIntervalHours": 24
+  },
+  "review": {
+    "pairs": { "RS02": 2, "RS07": 7, "RS30": 30 },
+    "dueAt": "max(firstAcceptedAt(anchor)) + delayDays * 24h; пара открывается по максимуму двух dueAt"
+  },
+  "xp": {
+    "learningFamilyFirstAccepted": 20,
+    "reviewSlotFirstAnsweredOnFinalization": 30,
+    "labCaseFamilyFirstComplete": 40,
+    "basisKeys": {
+      "learning": "learning:{familyId}",
+      "review": "review:{programLineage}:{slotFamilyId}",
+      "lab": "lab:{caseFamilyId}"
+    },
+    "maxFullBank": 700,
+    "maxStarterOneCase": 460
+  },
+  "roles": [
+    { "id": "newcomer", "title": "Знакомлюсь с инвестициями", "minXp": 0 },
+    { "id": "explorer", "title": "Исследователь", "minXp": 60, "minLearningFamilies": 3 },
+    { "id": "practitioner", "title": "Практик", "minXp": 180, "minModulesWithCompletion": 3 },
+    { "id": "strategist", "title": "Стратег", "minXp": 360, "requiresCompleteLabCase": true },
+    { "id": "navigator", "title": "Навигатор ТЭЙЛ", "minXp": 600, "minLearningFamilies": 24 }
+  ],
+  "badges": [
+    { "id": "first_review", "title": "Первый разбор", "rule": "первое принятое learning задание" },
+    { "id": "own_pace", "title": "В своём темпе", "rule": "завершён выбранный starter или full маршрут" },
+    { "id": "three_scenarios", "title": "Три сценария", "rule": "три сценария разобраны на одном исходном decision" },
+    { "id": "money_by_deadline", "title": "Деньги к сроку", "outcomeId": "deadline_access" },
+    { "id": "whole_result", "title": "Считаю весь результат", "outcomeId": "net_result" },
+    { "id": "look_inside", "title": "Смотрю внутрь", "outcomeId": "sector_concentration" },
+    { "id": "check_source", "title": "Проверяю источник", "outcomeId": "independent_verification" },
+    { "id": "later_confirmed", "title": "Получилось спустя время", "rule": "первое допустимое LearningEvidence после dueAt" }
+  ],
+  "cosmetics": {
+    "note": "Идентификаторы косметики восстановлены по §14; художественные изображения ещё не созданы. Награда не закрывает уроки, инструменты и проверку знаний.",
+    "slots": ["background", "accessory"],
+    "items": [
+      { "id": "bg-default", "title": "Спокойный фон", "slot": "background", "unlock": "default" },
+      { "id": "bg-sunrise", "title": "Рассветный фон", "slot": "background", "unlock": "badge:first_review" },
+      { "id": "bg-lab", "title": "Фон лаборатории", "slot": "background", "unlock": "badge:three_scenarios" },
+      { "id": "acc-compass", "title": "Компас", "slot": "accessory", "unlock": "badge:own_pace" },
+      { "id": "acc-magnifier", "title": "Лупа", "slot": "accessory", "unlock": "badge:check_source" },
+      { "id": "acc-calendar", "title": "Календарь", "slot": "accessory", "unlock": "badge:later_confirmed" },
+      { "id": "acc-early-ribbon", "title": "Лента «Деньги нужны раньше»", "slot": "accessory", "unlock": "challenge:evt-money-early" }
+    ]
+  },
+  "streak": {
+    "freezeInitial": 1,
+    "freezeRefillEveryActiveDays": 7,
+    "freezeMax": 2
+  },
+  "notifications": {
+    "modes": ["off", "three_per_week", "daily"],
+    "defaultOffer": "three_per_week",
+    "globalMaxPer24h": 1,
+    "threePerWeekMaxPer168h": 3,
+    "dailyMaxPer168h": 7,
+    "quietHours": { "from": "21:00", "to": "09:00" },
+    "autoPause": { "acceptedWithoutReturn": 2, "windowDays": 7, "pauseDays": 7 },
+    "defaultDaysIso": [1, 3, 5],
+    "defaultLocalTime": "18:00",
+    "deliveryWindowMinutes": 120,
+    "gentleReturnAfterDays": 3,
+    "maxProviderAttempts": 3
+  },
+  "rateLimits": {
+    "sessionsPerIpPerHour": 20,
+    "requestsPerUserPerMinute": 120
+  },
+  "money": {
+    "amountMinorMax": 100000000,
+    "goalMonthsMin": 1,
+    "goalMonthsMax": 120,
+    "categories": ["food", "transport", "housing", "other"],
+    "pendingActionsMax": 20,
+    "expensesMax": 500,
+    "actionHorizonDays": 30
+  },
+  "lab": {
+    "modelVersion": "teyl-lab-budget-v2",
+    "unitMinor": 100000,
+    "units": 10,
+    "feeBps": 10
+  }
+}
